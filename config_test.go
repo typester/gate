@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"fmt"
 )
 
 func TestParse(t *testing.T) {
@@ -12,10 +11,22 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer os.Remove(f.Name())
+	defer func() {
+		f.Close()
+		os.Remove(f.Name())
+	}()
 
 	data := `---
 address: ":9999"
+
+auth:
+  session:
+    key: secret
+
+  google:
+    client_id: 'secret client id'
+    client_secret: 'secret client secret'
+    redirect_url: 'http://example.com/oauth2callback'
 
 htdocs: ./
 
@@ -36,6 +47,5 @@ proxy:
 	if conf.Addr != ":9999" {
 		t.Errorf("unexpected address: %s", conf.Addr)
 	}
-
-	fmt.Printf("conf: %+v\n", conf)
 }
+
