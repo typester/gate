@@ -1,7 +1,9 @@
 package main
 
 import (
+	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -39,7 +41,7 @@ func (s *Server) Run() error {
 		Scopes:       []string{"email"},
 	}))
 
-	m.Use(oauth2.LoginRequired)
+	m.Use(loginRequired())
 	m.Use(restrictDomain(s.Conf.Domain))
 
 	for i := range s.Conf.Proxies {
@@ -61,9 +63,9 @@ func (s *Server) Run() error {
 
 		proxy := httputil.NewSingleHostReverseProxy(u)
 		if p.Strip {
-			m.Any(p.Path, http.StripPrefix(strip_path, proxy))
+			m.Any(p.Path, http.StripPrefix(strip_path, proxyHandleWrapper(u, proxy)))
 		} else {
-			m.Any(p.Path, proxy)
+			m.Any(p.Path, proxyHandleWrapper(u, proxy))
 		}
 
 		log.Printf("register proxy path:%s dest:%s", strip_path, u.String())
@@ -92,6 +94,66 @@ func forbidden(w http.ResponseWriter) {
 	w.Write([]byte("Access denied"))
 }
 
+func isWebsocket(r *http.Request) bool {
+	if strings.ToLower(r.Header.Get("Connection")) == "upgrade" &&
+		strings.ToLower(r.Header.Get("Upgrade")) == "websocket" {
+		return true
+	} else {
+		return false
+	}
+}
+
+func proxyHandleWrapper(u *url.URL, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// websocket?
+		if isWebsocket(r) {
+			target := u.Host
+			if strings.HasPrefix(r.URL.Path, "/") == false {
+				r.URL.Path = "/" + r.URL.Path
+			}
+
+			log.Printf("proxy ws request: %s", r.URL.String())
+
+			// websocket proxy by bradfitz https://groups.google.com/forum/#!topic/golang-nuts/KBx9pDlvFOc
+			d, err := net.Dial("tcp", target)
+			if err != nil {
+				http.Error(w, "Error contacting backend server.", 500)
+				log.Printf("Error dialing websocket backend %s: %v", target, err)
+				return
+			}
+			hj, ok := w.(http.Hijacker)
+			if !ok {
+				http.Error(w, "Not a hijacker?", 500)
+				return
+			}
+			nc, _, err := hj.Hijack()
+			if err != nil {
+				log.Printf("Hijack error: %v", err)
+				return
+			}
+			defer nc.Close()
+			defer d.Close()
+
+			err = r.Write(d)
+			if err != nil {
+				log.Printf("Error copying request to target: %v", err)
+				return
+			}
+
+			errc := make(chan error, 2)
+			cp := func(dst io.Writer, src io.Reader) {
+				_, err := io.Copy(dst, src)
+				errc <- err
+			}
+			go cp(d, nc)
+			go cp(nc, d)
+			<-errc
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	})
+}
+
 // base64Decode decodes the Base64url encoded string
 //
 // steel from code.google.com/p/goauth2/oauth/jwt
@@ -107,7 +169,12 @@ func base64Decode(s string) ([]byte, error) {
 }
 
 func restrictDomain(domain string) martini.Handler {
-	return func(c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter) {
+	return func(c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
+		// skip websocket
+		if isWebsocket(r) {
+			return
+		}
+
 		extra := tokens.ExtraData()
 		if _, ok := extra["id_token"]; ok == false {
 			log.Printf("id_token not found")
@@ -150,5 +217,14 @@ func restrictDomain(domain string) martini.Handler {
 			forbidden(w)
 			return
 		}
+	}
+}
+
+func loginRequired() martini.Handler {
+	return func(s sessions.Session, c martini.Context, w http.ResponseWriter, r *http.Request) {
+		if isWebsocket(r) {
+			return
+		}
+		c.Invoke(oauth2.LoginRequired)
 	}
 }
