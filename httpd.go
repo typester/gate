@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-martini/martini"
+	gooauth2 "github.com/golang/oauth2"
 	"github.com/martini-contrib/oauth2"
 	"github.com/martini-contrib/sessions"
 	"path/filepath"
@@ -34,8 +35,8 @@ func (s *Server) Run() error {
 	m := martini.Classic()
 
 	m.Use(sessions.Sessions("session", sessions.NewCookieStore([]byte(s.Conf.Auth.Session.Key))))
-	m.Use(oauth2.Google(&oauth2.Options{
-		ClientId:     s.Conf.Auth.Google.ClientId,
+	m.Use(oauth2.Google(&gooauth2.Options{
+		ClientID:     s.Conf.Auth.Google.ClientId,
 		ClientSecret: s.Conf.Auth.Google.ClientSecret,
 		RedirectURL:  s.Conf.Auth.Google.RedirectURL,
 		Scopes:       []string{"email"},
