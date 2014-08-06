@@ -19,7 +19,8 @@ auth:
     redirect_url: https://yourapp.example.com/oauth2callback
 
 # # restrict domain. (optional)
-# domain: yourdomain.com
+# domain:
+#   - yourdomain.com
 
 # document root for static files
 htdocs: ./
