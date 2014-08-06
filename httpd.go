@@ -169,7 +169,7 @@ func base64Decode(s string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(s)
 }
 
-func restrictDomain(domain string) martini.Handler {
+func restrictDomain(domain []string) martini.Handler {
 	return func(c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
 		// skip websocket
 		if isWebsocket(r) {
@@ -205,8 +205,20 @@ func restrictDomain(domain string) martini.Handler {
 		}
 
 		if email, ok := info["email"].(string); ok {
-			if domain == "" || strings.HasSuffix(email, "@"+domain) {
-				user := &User{email}
+			var user *User
+			if len(domain) > 0 {
+				for _, d := range domain {
+					if strings.HasSuffix(email, "@"+d) {
+						user = &User{email}
+						break
+					}
+				}
+			} else {
+				user = &User{email}
+			}
+
+			if user != nil {
+				log.Printf("user %s logged in", email)
 				c.Map(user)
 			} else {
 				log.Printf("email doesn't allow: %s", email)

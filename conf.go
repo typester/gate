@@ -10,7 +10,7 @@ type Conf struct {
 	Addr    string      `yaml:"address"`
 	SSL     SSLConf     `yaml:"ssl"`
 	Auth    AuthConf    `yaml:"auth"`
-	Domain  string      `yaml:"domain"`
+	Domain  []string    `yaml:"domain"`
 	Proxies []ProxyConf `yaml:"proxy"`
 	Htdocs  string      `yaml:"htdocs"`
 }

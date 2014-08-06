@@ -49,7 +49,7 @@ proxy:
 	}
 }
 
-func TestParseSingleDomain(t *testing.T) {
+func TestParseMultiDomain(t *testing.T) {
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		t.Error(err)
@@ -78,8 +78,9 @@ proxy:
     dest: http://example.com/bar
     strip_path: yes
 
-domain: 'example1.com'
-
+domain:
+  - 'example1.com'
+  - 'example2.com'
 `
 	if err := ioutil.WriteFile(f.Name(), []byte(data), 0644); err != nil {
 		t.Error(err)
@@ -90,8 +91,12 @@ domain: 'example1.com'
 		t.Error(err)
 	}
 
-	if conf.Domain != "example1.com" {
-		t.Errorf("unexpected address: %s", conf.Domain)
+	if len(conf.Domain) != 2 {
+		t.Errorf("unexpected domains num: %d", len(conf.Domain))
+	}
+
+	if conf.Domain[0] != "example1.com" || conf.Domain[1] != "example2.com" {
+		t.Errorf("unexpected domains: %+v", conf.Domain)
 	}
 }
 
