@@ -20,7 +20,8 @@ auth:
 
 # # restrict domain. (optional)
 # domain:
-#   - yourdomain.com
+#   - yourdomain.com    # restrict by domain
+#   - example@gmail.com # or specific address
 
 # document root for static files
 htdocs: ./

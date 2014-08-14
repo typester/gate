@@ -208,9 +208,15 @@ func restrictDomain(domain []string) martini.Handler {
 			var user *User
 			if len(domain) > 0 {
 				for _, d := range domain {
-					if strings.HasSuffix(email, "@"+d) {
-						user = &User{email}
-						break
+					if strings.Contains(d, "@") {
+						if d == email {
+							user = &User{email}
+						}
+					} else {
+						if strings.HasSuffix(email, "@"+d) {
+							user = &User{email}
+							break
+						}
 					}
 				}
 			} else {
