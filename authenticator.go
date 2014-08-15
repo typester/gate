@@ -12,36 +12,45 @@ import (
 
 type Authenticator interface {
 	Authenticate([]string, martini.Context, oauth2.Tokens, http.ResponseWriter, *http.Request)
+	Handler() martini.Handler
 }
 
 func NewAuthenticator(conf *Conf) Authenticator {
-	var a Authenticator
+	var authenticator Authenticator
 
 	if conf.Auth.Info.Service == "google" {
-		oauth := oauth2.Google(&gooauth2.Options{
+		handler := oauth2.Google(&gooauth2.Options{
 			ClientID:     conf.Auth.Info.ClientId,
 			ClientSecret: conf.Auth.Info.ClientSecret,
 			RedirectURL:  conf.Auth.Info.RedirectURL,
 			Scopes:       []string{"email"},
 		})
-		a = &GoogleAuth{oauth}
+		authenticator = &GoogleAuth{&BaseAuth{handler}}
 	} else if conf.Auth.Info.Service == "github" {
-		oauth := oauth2.Github(&gooauth2.Options{
+		handler := oauth2.Github(&gooauth2.Options{
 			ClientID:     conf.Auth.Info.ClientId,
 			ClientSecret: conf.Auth.Info.ClientSecret,
 			RedirectURL:  conf.Auth.Info.RedirectURL,
 			Scopes:       []string{"user:email"},
 		})
-		a = &GitHubAuth{oauth}
+		authenticator = &GitHubAuth{&BaseAuth{handler}}
 	} else {
 		panic("unsupported authentication method")
 	}
 
-	return a
+	return authenticator
+}
+
+type BaseAuth struct {
+	handler martini.Handler
+}
+
+func (b *BaseAuth) Handler() martini.Handler {
+	return b.handler
 }
 
 type GoogleAuth struct {
-	martini.Handler
+	*BaseAuth
 }
 
 func (a *GoogleAuth) Authenticate(domain []string, c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
@@ -108,7 +117,7 @@ func (a *GoogleAuth) Authenticate(domain []string, c martini.Context, tokens oau
 }
 
 type GitHubAuth struct {
-	martini.Handler
+	*BaseAuth
 }
 
 func (a *GitHubAuth) Authenticate(domain []string, c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {

@@ -34,7 +34,7 @@ func (s *Server) Run() error {
 	a := NewAuthenticator(s.Conf)
 
 	m.Use(sessions.Sessions("session", sessions.NewCookieStore([]byte(s.Conf.Auth.Session.Key))))
-	m.Use(a)
+	m.Use(a.Handler())
 
 	m.Use(loginRequired())
 	m.Use(restrictDomain(s.Conf.Domain, a))
