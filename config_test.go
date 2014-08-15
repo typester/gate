@@ -23,7 +23,8 @@ auth:
   session:
     key: secret
 
-  google:
+  info:
+    service: 'google'
     client_id: 'secret client id'
     client_secret: 'secret client secret'
     redirect_url: 'http://example.com/oauth2callback'
@@ -66,7 +67,8 @@ auth:
   session:
     key: secret
 
-  google:
+  info:
+    service: 'google'
     client_id: 'secret client id'
     client_secret: 'secret client secret'
     redirect_url: 'http://example.com/oauth2callback'

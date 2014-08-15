@@ -11,11 +11,12 @@ auth:
     # authentication key for cookie store
     key: secret123
 
-  google:
-    # your google app keys
+  info:
+    service: google
+    # your app keys for the service
     client_id: your client id
     client_secret: your client secret
-    # your google app redirect_url: path is always "/oauth2callback"
+    # your app redirect_url for the service: if the service is Google, path is always "/oauth2callback"
     redirect_url: https://yourapp.example.com/oauth2callback
 
 # # restrict domain. (optional)
