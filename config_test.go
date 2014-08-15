@@ -50,7 +50,7 @@ proxy:
 	}
 }
 
-func TestParseMultiDomain(t *testing.T) {
+func TestParseMultiConditions(t *testing.T) {
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		t.Error(err)
@@ -80,7 +80,7 @@ proxy:
     dest: http://example.com/bar
     strip_path: yes
 
-domain:
+conditions:
   - 'example1.com'
   - 'example2.com'
 `
@@ -93,12 +93,12 @@ domain:
 		t.Error(err)
 	}
 
-	if len(conf.Domain) != 2 {
-		t.Errorf("unexpected domains num: %d", len(conf.Domain))
+	if len(conf.Conditions) != 2 {
+		t.Errorf("unexpected conditions num: %d", len(conf.Conditions))
 	}
 
-	if conf.Domain[0] != "example1.com" || conf.Domain[1] != "example2.com" {
-		t.Errorf("unexpected domains: %+v", conf.Domain)
+	if conf.Conditions[0] != "example1.com" || conf.Conditions[1] != "example2.com" {
+		t.Errorf("unexpected conditions: %+v", conf.Conditions)
 	}
 }
 

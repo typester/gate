@@ -5,6 +5,7 @@ import (
 	"github.com/go-martini/martini"
 	gooauth2 "github.com/golang/oauth2"
 	"github.com/martini-contrib/oauth2"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -31,7 +32,7 @@ func NewAuthenticator(conf *Conf) Authenticator {
 			ClientID:     conf.Auth.Info.ClientId,
 			ClientSecret: conf.Auth.Info.ClientSecret,
 			RedirectURL:  conf.Auth.Info.RedirectURL,
-			Scopes:       []string{"user:email"},
+			Scopes:       []string{"read:org"},
 		})
 		authenticator = &GitHubAuth{&BaseAuth{handler}}
 	} else {
@@ -120,8 +121,49 @@ type GitHubAuth struct {
 	*BaseAuth
 }
 
-func (a *GitHubAuth) Authenticate(domain []string, c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
+func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
+	if len(organizations) > 0 {
+		req, err := http.NewRequest("GET", "https://api.github.com/user/orgs", nil)
+		if err != nil {
+			log.Printf("failed to create a request to retrieve organizations: %s", err)
+			forbidden(w)
+		}
 
+		req.SetBasicAuth(tokens.Access(), "x-oauth-basic")
+
+		client := http.Client{}
+		res, err := client.Do(req)
+		if err != nil {
+			log.Printf("failed to retrieve organizations: %s", err)
+			forbidden(w)
+		}
+
+		data, err := ioutil.ReadAll(res.Body)
+		res.Body.Close()
+
+		if err != nil {
+			log.Printf("failed to read body of GitHub response: %s", err)
+			forbidden(w)
+		}
+
+		var info []map[string]interface{}
+		if err := json.Unmarshal(data, &info); err != nil {
+			log.Printf("failed to decode json: %s", err.Error())
+			forbidden(w)
+			return
+		}
+
+		for _, targetOrg := range info {
+			for _, conditionOrg := range organizations {
+				if targetOrg["login"] == conditionOrg {
+					return
+				}
+			}
+		}
+
+		log.Print("not a member of designated organizations")
+		forbidden(w)
+	}
 }
 
 func forbidden(w http.ResponseWriter) {
