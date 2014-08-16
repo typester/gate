@@ -37,7 +37,7 @@ func (s *Server) Run() error {
 	m.Use(a.Handler())
 
 	m.Use(loginRequired())
-	m.Use(restrictByConditions(s.Conf.Conditions, a))
+	m.Use(restrictRequest(s.Conf.Restrictions, a))
 
 	for i := range s.Conf.Proxies {
 		p := s.Conf.Proxies[i]
@@ -158,14 +158,14 @@ func base64Decode(s string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(s)
 }
 
-func restrictByConditions(conditions []string, authenticator Authenticator) martini.Handler {
+func restrictRequest(restrictions []string, authenticator Authenticator) martini.Handler {
 	return func(c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
 		// skip websocket
 		if isWebsocket(r) {
 			return
 		}
 
-		authenticator.Authenticate(conditions, c, tokens, w, r)
+		authenticator.Authenticate(restrictions, c, tokens, w, r)
 	}
 }
 

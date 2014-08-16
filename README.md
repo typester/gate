@@ -1,8 +1,8 @@
 # "gate" for your private resources
 
-gate is a static file server and reverse proxy integrated with Google/GitHub account authentication.
+gate is a static file server and reverse proxy integrated with OAuth2 account authentication.
 
-With gate, you can safely serve your private resources with your company Google Apps/GitHub authenticaiton.
+With gate, you can safely serve your private resources based on whether or not request user is a member of your company's Google Apps or GitHub organizations.
 
 ## Usage
 
@@ -16,10 +16,10 @@ With gate, you can safely serve your private resources with your company Google 
 # address to bind
 address: :9999
 
-# ssl keys (optional)
-ssl:
-  cert: ./ssl/ssl.cer
-  key: ./ssl/ssl.key
+# # ssl keys (optional)
+# ssl:
+#   cert: ./ssl/ssl.cer
+#   key: ./ssl/ssl.key
 
 auth:
   session:
@@ -27,16 +27,19 @@ auth:
     key: secret123
 
   info:
+    # oauth2 provider name (`google` or `github`)
     service: google
-    # your google app keys
+    # your app keys for the service
     client_id: your client id
     client_secret: your client secret
-    # your google app redirect_url: path is always "/oauth2callback"
+    # your app redirect_url for the service: if the service is Google, path is always "/oauth2callback"
     redirect_url: https://yourapp.example.com/oauth2callback
 
-# restrict domain. (optional)
-conditions:
-  - yourdomain.com
+# # restrict user request. (optional)
+# restrictions:
+#   - yourdomain.com    # domain of your Google App (Google)
+#   - example@gmail.com # specific email address (same as above)
+#   - your_company_org  # organization name (GitHub)
 
 # document root for static files
 htdocs: ./
@@ -66,10 +69,10 @@ auth:
     client_secret: your client secret
     redirect_url: https://yourapp.example.com/oauth2callback
 
-# restrict domain. (optional)
-conditions:
-  - example.com
-  - you@example.com
+# restrict user request. (optional)
+restrictions:
+  - yourdomain.com    # domain of your Google App
+  - example@gmail.com # specific email address
 ```
 
 ### Example config for GitHub
@@ -84,8 +87,8 @@ auth:
     client_secret: your client secret
     redirect_url: https://yourapp.example.com/oauth2callback
 
-# restrict organization (optional)
-conditions:
+# restrict user request. (optional)
+restrictions:
   - foo_organization
   - bar_organization
 ```

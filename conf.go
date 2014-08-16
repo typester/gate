@@ -7,12 +7,12 @@ import (
 )
 
 type Conf struct {
-	Addr       string      `yaml:"address"`
-	SSL        SSLConf     `yaml:"ssl"`
-	Auth       AuthConf    `yaml:"auth"`
-	Conditions []string    `yaml:"conditions"`
-	Proxies    []ProxyConf `yaml:"proxy"`
-	Htdocs     string      `yaml:"htdocs"`
+	Addr         string      `yaml:"address"`
+	SSL          SSLConf     `yaml:"ssl"`
+	Auth         AuthConf    `yaml:"auth"`
+	Restrictions []string    `yaml:"restrictions"`
+	Proxies      []ProxyConf `yaml:"proxy"`
+	Htdocs       string      `yaml:"htdocs"`
 }
 
 type SSLConf struct {

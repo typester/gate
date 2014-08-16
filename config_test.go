@@ -50,7 +50,7 @@ proxy:
 	}
 }
 
-func TestParseMultiConditions(t *testing.T) {
+func TestParseMultiRestrictions(t *testing.T) {
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		t.Error(err)
@@ -80,7 +80,7 @@ proxy:
     dest: http://example.com/bar
     strip_path: yes
 
-conditions:
+restrictions:
   - 'example1.com'
   - 'example2.com'
 `
@@ -93,12 +93,12 @@ conditions:
 		t.Error(err)
 	}
 
-	if len(conf.Conditions) != 2 {
-		t.Errorf("unexpected conditions num: %d", len(conf.Conditions))
+	if len(conf.Restrictions) != 2 {
+		t.Errorf("unexpected restrictions num: %d", len(conf.Restrictions))
 	}
 
-	if conf.Conditions[0] != "example1.com" || conf.Conditions[1] != "example2.com" {
-		t.Errorf("unexpected conditions: %+v", conf.Conditions)
+	if conf.Restrictions[0] != "example1.com" || conf.Restrictions[1] != "example2.com" {
+		t.Errorf("unexpected restrictions: %+v", conf.Restrictions)
 	}
 }
 
