@@ -127,6 +127,7 @@ func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tok
 		if err != nil {
 			log.Printf("failed to create a request to retrieve organizations: %s", err)
 			forbidden(w)
+			return
 		}
 
 		req.SetBasicAuth(tokens.Access(), "x-oauth-basic")
@@ -136,6 +137,7 @@ func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tok
 		if err != nil {
 			log.Printf("failed to retrieve organizations: %s", err)
 			forbidden(w)
+			return
 		}
 
 		data, err := ioutil.ReadAll(res.Body)
@@ -144,6 +146,7 @@ func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tok
 		if err != nil {
 			log.Printf("failed to read body of GitHub response: %s", err)
 			forbidden(w)
+			return
 		}
 
 		var info []map[string]interface{}
@@ -163,6 +166,7 @@ func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tok
 
 		log.Print("not a member of designated organizations")
 		forbidden(w)
+		return
 	}
 }
 
