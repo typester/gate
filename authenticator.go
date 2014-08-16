@@ -153,9 +153,9 @@ func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tok
 			return
 		}
 
-		for _, targetOrg := range info {
-			for _, conditionOrg := range organizations {
-				if targetOrg["login"] == conditionOrg {
+		for _, userOrg := range info {
+			for _, org := range organizations {
+				if userOrg["login"] == org {
 					return
 				}
 			}
