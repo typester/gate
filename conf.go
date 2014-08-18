@@ -7,12 +7,12 @@ import (
 )
 
 type Conf struct {
-	Addr    string      `yaml:"address"`
-	SSL     SSLConf     `yaml:"ssl"`
-	Auth    AuthConf    `yaml:"auth"`
-	Domain  []string    `yaml:"domain"`
-	Proxies []ProxyConf `yaml:"proxy"`
-	Htdocs  string      `yaml:"htdocs"`
+	Addr         string      `yaml:"address"`
+	SSL          SSLConf     `yaml:"ssl"`
+	Auth         AuthConf    `yaml:"auth"`
+	Restrictions []string    `yaml:"restrictions"`
+	Proxies      []ProxyConf `yaml:"proxy"`
+	Htdocs       string      `yaml:"htdocs"`
 }
 
 type SSLConf struct {
@@ -22,14 +22,15 @@ type SSLConf struct {
 
 type AuthConf struct {
 	Session AuthSessionConf `yaml:"session"`
-	Google  AuthGoogleConf  `yaml:"google"`
+	Info    AuthInfoConf    `yaml:"info"`
 }
 
 type AuthSessionConf struct {
 	Key string `yaml:"key"`
 }
 
-type AuthGoogleConf struct {
+type AuthInfoConf struct {
+	Service      string `yaml:"service"`
 	ClientId     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
 	RedirectURL  string `yaml:"redirect_url"`
@@ -59,14 +60,17 @@ func ParseConf(path string) (*Conf, error) {
 	if c.Auth.Session.Key == "" {
 		return nil, errors.New("auth.session.key config is required")
 	}
-	if c.Auth.Google.ClientId == "" {
-		return nil, errors.New("auth.google.client_id config is required")
+	if c.Auth.Info.Service == "" {
+		return nil, errors.New("auth.info.service config is required")
 	}
-	if c.Auth.Google.ClientSecret == "" {
-		return nil, errors.New("auth.google.client_secret config is required")
+	if c.Auth.Info.ClientId == "" {
+		return nil, errors.New("auth.info.client_id config is required")
 	}
-	if c.Auth.Google.RedirectURL == "" {
-		return nil, errors.New("auth.google.redirect_url config is required")
+	if c.Auth.Info.ClientSecret == "" {
+		return nil, errors.New("auth.info.client_secret config is required")
+	}
+	if c.Auth.Info.RedirectURL == "" {
+		return nil, errors.New("auth.info.redirect_url config is required")
 	}
 
 	if c.Htdocs == "" {

@@ -11,17 +11,20 @@ auth:
     # authentication key for cookie store
     key: secret123
 
-  google:
-    # your google app keys
+  info:
+    # oauth2 provider name (`google` or `github`)
+    service: google
+    # your app keys for the service
     client_id: your client id
     client_secret: your client secret
-    # your google app redirect_url: path is always "/oauth2callback"
+    # your app redirect_url for the service: if the service is Google, path is always "/oauth2callback"
     redirect_url: https://yourapp.example.com/oauth2callback
 
-# # restrict domain. (optional)
-# domain:
-#   - yourdomain.com    # restrict by domain
-#   - example@gmail.com # or specific address
+# # restrict user request. (optional)
+# restrictions:
+#   - yourdomain.com    # domain of your Google App (Google)
+#   - example@gmail.com # specific email address (same as above)
+#   - your_company_org  # organization name (GitHub)
 
 # document root for static files
 htdocs: ./

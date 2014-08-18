@@ -23,7 +23,8 @@ auth:
   session:
     key: secret
 
-  google:
+  info:
+    service: 'google'
     client_id: 'secret client id'
     client_secret: 'secret client secret'
     redirect_url: 'http://example.com/oauth2callback'
@@ -49,7 +50,7 @@ proxy:
 	}
 }
 
-func TestParseMultiDomain(t *testing.T) {
+func TestParseMultiRestrictions(t *testing.T) {
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		t.Error(err)
@@ -66,7 +67,8 @@ auth:
   session:
     key: secret
 
-  google:
+  info:
+    service: 'google'
     client_id: 'secret client id'
     client_secret: 'secret client secret'
     redirect_url: 'http://example.com/oauth2callback'
@@ -78,7 +80,7 @@ proxy:
     dest: http://example.com/bar
     strip_path: yes
 
-domain:
+restrictions:
   - 'example1.com'
   - 'example2.com'
 `
@@ -91,12 +93,12 @@ domain:
 		t.Error(err)
 	}
 
-	if len(conf.Domain) != 2 {
-		t.Errorf("unexpected domains num: %d", len(conf.Domain))
+	if len(conf.Restrictions) != 2 {
+		t.Errorf("unexpected restrictions num: %d", len(conf.Restrictions))
 	}
 
-	if conf.Domain[0] != "example1.com" || conf.Domain[1] != "example2.com" {
-		t.Errorf("unexpected domains: %+v", conf.Domain)
+	if conf.Restrictions[0] != "example1.com" || conf.Restrictions[1] != "example2.com" {
+		t.Errorf("unexpected restrictions: %+v", conf.Restrictions)
 	}
 }
 
