@@ -34,6 +34,8 @@ type AuthInfoConf struct {
 	ClientId     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
 	RedirectURL  string `yaml:"redirect_url"`
+	Endpoint     string `yaml:"endpoint"`
+	ApiEndpoint  string `yaml:"api_endpoint"`
 }
 
 type ProxyConf struct {
@@ -75,6 +77,13 @@ func ParseConf(path string) (*Conf, error) {
 
 	if c.Htdocs == "" {
 		c.Htdocs = "."
+	}
+
+	if c.Auth.Info.Service == "github" && c.Auth.Info.Endpoint == "" {
+		c.Auth.Info.Endpoint = "https://github.com"
+	}
+	if c.Auth.Info.Service == "github" && c.Auth.Info.ApiEndpoint == "" {
+		c.Auth.Info.ApiEndpoint = "https://api.github.com"
 	}
 
 	return c, nil
