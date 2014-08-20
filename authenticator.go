@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 type Authenticator interface {
@@ -26,15 +27,15 @@ func NewAuthenticator(conf *Conf) Authenticator {
 			RedirectURL:  conf.Auth.Info.RedirectURL,
 			Scopes:       []string{"email"},
 		})
-		authenticator = &GoogleAuth{&BaseAuth{handler}}
+		authenticator = &GoogleAuth{&BaseAuth{handler, conf}}
 	} else if conf.Auth.Info.Service == "github" {
-		handler := oauth2.Github(&gooauth2.Options{
+		handler := GithubGeneral(&gooauth2.Options{
 			ClientID:     conf.Auth.Info.ClientId,
 			ClientSecret: conf.Auth.Info.ClientSecret,
 			RedirectURL:  conf.Auth.Info.RedirectURL,
 			Scopes:       []string{"read:org"},
-		})
-		authenticator = &GitHubAuth{&BaseAuth{handler}}
+		}, conf)
+		authenticator = &GitHubAuth{&BaseAuth{handler, conf}}
 	} else {
 		panic("unsupported authentication method")
 	}
@@ -42,8 +43,17 @@ func NewAuthenticator(conf *Conf) Authenticator {
 	return authenticator
 }
 
+// Currently, martini-contrib/oauth2 doesn't support github enterprise directly.
+func GithubGeneral(opts *gooauth2.Options, conf *Conf) martini.Handler {
+	authUrl := fmt.Sprintf("%s/login/oauth/authorize", conf.Auth.Info.Endpoint)
+	tokenUrl := fmt.Sprintf("%s/login/oauth/access_token", conf.Auth.Info.Endpoint)
+
+	return oauth2.NewOAuth2Provider(opts, authUrl, tokenUrl)
+}
+
 type BaseAuth struct {
 	handler martini.Handler
+	conf *Conf
 }
 
 func (b *BaseAuth) Handler() martini.Handler {
@@ -123,7 +133,7 @@ type GitHubAuth struct {
 
 func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
 	if len(organizations) > 0 {
-		req, err := http.NewRequest("GET", "https://api.github.com/user/orgs", nil)
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/user/orgs", a.conf.Auth.Info.Endpoint), nil)
 		if err != nil {
 			log.Printf("failed to create a request to retrieve organizations: %s", err)
 			forbidden(w)

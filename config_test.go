@@ -102,3 +102,42 @@ restrictions:
 	}
 }
 
+func TestParseGithubServiceShouldSetDefaultValue(t *testing.T) {
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		f.Close()
+		os.Remove(f.Name())
+	}()
+
+	data := `---
+address: ":9999"
+
+auth:
+  session:
+    key: secret
+
+  info:
+    service: 'github'
+    client_id: 'secret client id'
+    client_secret: 'secret client secret'
+    redirect_url: 'http://example.com/oauth2callback'
+`
+	if err := ioutil.WriteFile(f.Name(), []byte(data), 0644); err != nil {
+		t.Error(err)
+	}
+
+	conf, err := ParseConf(f.Name())
+	if err != nil {
+		t.Error(err)
+	}
+
+	if conf.Auth.Info.Endpoint != "https://github.com" {
+		t.Errorf("unexpected endpoint address: %s", conf.Auth.Info.Endpoint)
+	}
+	if conf.Auth.Info.ApiEndpoint != "https://api.github.com" {
+		t.Errorf("unexpected api endpoint address: %s", conf.Auth.Info.ApiEndpoint)
+	}
+}
