@@ -93,6 +93,21 @@ restrictions:
   - bar_organization
 ```
 
+#### github:e support
+
+GitHub Enterprise is also supported. To authenticate via github enterprise, add api endpoint information to config like following:
+
+```yaml
+auth:
+  info:
+    service: github
+    client_id: your client id
+    client_secret: your client secret
+    redirect_url: https://yourapp.example.com/oauth2callback
+    endpoint: https://github.yourcompany.com
+    api_endpoint: https://api.github.yourcompany.com
+```
+
 ## License
 
 MIT
