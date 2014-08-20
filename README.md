@@ -106,7 +106,7 @@ auth:
     client_secret: your client secret
     redirect_url: https://yourapp.example.com/oauth2callback
     endpoint: https://github.yourcompany.com
-    api_endpoint: https://api.github.yourcompany.com
+    api_endpoint: https://github.yourcompany.com/api
 ```
 
 ## License
