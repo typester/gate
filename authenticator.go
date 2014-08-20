@@ -133,7 +133,7 @@ type GitHubAuth struct {
 
 func (a *GitHubAuth) Authenticate(organizations []string, c martini.Context, tokens oauth2.Tokens, w http.ResponseWriter, r *http.Request) {
 	if len(organizations) > 0 {
-		req, err := http.NewRequest("GET", fmt.Sprintf("%s/user/orgs", a.conf.Auth.Info.Endpoint), nil)
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/user/orgs", a.conf.Auth.Info.ApiEndpoint), nil)
 		if err != nil {
 			log.Printf("failed to create a request to retrieve organizations: %s", err)
 			forbidden(w)
