@@ -6,9 +6,10 @@ With gate, you can safely serve your private resources based on whether or not r
 
 ## Usage
 
-1. rename `config_sample.yml` to `config.yml`
-2. edit `config.yml` to fit your environment
-3. run `gate`
+1. Download [binary](https://github.com/typester/gate/releases) or `go get`
+2. rename `config_sample.yml` to `config.yml`
+3. edit `config.yml` to fit your environment
+4. run `gate`
 
 ## Example config
 
