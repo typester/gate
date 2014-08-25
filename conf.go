@@ -26,7 +26,8 @@ type AuthConf struct {
 }
 
 type AuthSessionConf struct {
-	Key string `yaml:"key"`
+	Key          string `yaml:"key"`
+	CookieDomain string `yaml:"cookie_domain"`
 }
 
 type AuthInfoConf struct {
@@ -42,6 +43,7 @@ type ProxyConf struct {
 	Path  string `yaml:"path"`
 	Dest  string `yaml:"dest"`
 	Strip bool   `yaml:"strip_path"`
+	Host  string `yaml:"host"`
 }
 
 func ParseConf(path string) (*Conf, error) {
