@@ -42,17 +42,19 @@ func NewServer(conf *Conf) *Server {
 
 func (s *Server) Run() error {
 	m := martini.Classic()
-	a := NewAuthenticator(s.Conf)
 
 	cookieStore := sessions.NewCookieStore([]byte(s.Conf.Auth.Session.Key))
 	if domain := s.Conf.Auth.Session.CookieDomain; domain != "" {
 		cookieStore.Options(sessions.Options{Domain: domain})
 	}
 	m.Use(sessions.Sessions("session", cookieStore))
-	m.Use(a.Handler())
 
-	m.Use(loginRequired())
-	m.Use(restrictRequest(s.Conf.Restrictions, a))
+	if s.Conf.Auth.Info.Service != noAuthServiceName {
+		a := NewAuthenticator(s.Conf)
+		m.Use(a.Handler())
+		m.Use(loginRequired())
+		m.Use(restrictRequest(s.Conf.Restrictions, a))
+	}
 
 	backendsFor := make(map[string][]Backend)
 	backendIndex := make([]string, len(s.Conf.Proxies))

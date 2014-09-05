@@ -6,6 +6,10 @@ import (
 	"io/ioutil"
 )
 
+const (
+	noAuthServiceName = "nothing" // for testing only (undocumented)
+)
+
 type Conf struct {
 	Addr         string      `yaml:"address"`
 	SSL          SSLConf     `yaml:"ssl"`
