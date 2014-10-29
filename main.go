@@ -17,6 +17,8 @@ func main() {
 		panic(err)
 	}
 
+	conf.SetOAuth2Paths()
+
 	server := NewServer(conf)
 	log.Fatal(server.Run())
 }
