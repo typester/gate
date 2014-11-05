@@ -1,20 +1,19 @@
 package main
 
 import (
+	"encoding/base64"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path/filepath"
 	"strings"
-
-	"encoding/base64"
 
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/oauth2"
 	"github.com/martini-contrib/sessions"
-	"path/filepath"
 )
 
 type Server struct {
@@ -58,11 +57,14 @@ func (s *Server) Run() error {
 
 	backendsFor := make(map[string][]Backend)
 	backendIndex := make([]string, len(s.Conf.Proxies))
+	rawPaths := make([]string, len(s.Conf.Proxies))
 
 	for i := range s.Conf.Proxies {
 		p := s.Conf.Proxies[i]
 
+		rawPath := ""
 		if strings.HasSuffix(p.Path, "/") == false {
+			rawPath = p.Path
 			p.Path += "/"
 		}
 		strip_path := p.Path
@@ -82,17 +84,24 @@ func (s *Server) Run() error {
 			StripPath: strip_path,
 		})
 		backendIndex[i] = p.Path
+		rawPaths[i] = rawPath
 		log.Printf("register proxy host:%s path:%s dest:%s strip_path:%v", p.Host, strip_path, u.String(), p.Strip)
 	}
 
 	registered := make(map[string]bool)
-	for _, path := range backendIndex {
+	for i, path := range backendIndex {
 		if registered[path] {
 			continue
 		}
 		proxy := newVirtualHostReverseProxy(backendsFor[path])
 		m.Any(path, proxyHandleWrapper(proxy))
 		registered[path] = true
+		rawPath := rawPaths[i]
+		if rawPath != "" {
+			m.Get(rawPath, func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, rawPath+"/", http.StatusFound)
+			})
+		}
 	}
 
 	path, err := filepath.Abs(s.Conf.Htdocs)
