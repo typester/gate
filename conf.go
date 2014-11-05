@@ -4,6 +4,7 @@ import (
 	"errors"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
+	"github.com/martini-contrib/oauth2"
 )
 
 const (
@@ -16,6 +17,7 @@ type Conf struct {
 	Auth         AuthConf    `yaml:"auth"`
 	Restrictions []string    `yaml:"restrictions"`
 	Proxies      []ProxyConf `yaml:"proxy"`
+	Paths        PathConf    `yaml:"paths"`
 	Htdocs       string      `yaml:"htdocs"`
 }
 
@@ -48,6 +50,13 @@ type ProxyConf struct {
 	Dest  string `yaml:"dest"`
 	Strip bool   `yaml:"strip_path"`
 	Host  string `yaml:"host"`
+}
+
+type PathConf struct {
+	Login    string `yaml:"login"`
+	Logout   string `yaml:"logout"`
+	Callback string `yaml:"callback"`
+	Error    string `yaml:"error"`
 }
 
 func ParseConf(path string) (*Conf, error) {
@@ -93,4 +102,19 @@ func ParseConf(path string) (*Conf, error) {
 	}
 
 	return c, nil
+}
+
+func (c *Conf) SetOAuth2Paths() {
+	if c.Paths.Login != "" {
+		oauth2.PathLogin = c.Paths.Login
+	}
+	if c.Paths.Logout != "" {
+		oauth2.PathLogout = c.Paths.Logout
+	}
+	if c.Paths.Callback != "" {
+		oauth2.PathCallback = c.Paths.Callback
+	}
+	if c.Paths.Error != "" {
+		oauth2.PathError = c.Paths.Error
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"github.com/martini-contrib/oauth2"
 )
 
 func TestParse(t *testing.T) {
@@ -200,5 +201,59 @@ proxy:
 	ifdb := conf.Proxies[1]
 	if ifdb.Path != "/" || ifdb.Host != "influxdb.example.com" || ifdb.Dest != "http://127.0.0.1:8086" {
 		t.Errorf("unexpected proxy[1]: %#v", ifdb)
+	}
+}
+
+func TestPathConf(t *testing.T) {
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		f.Close()
+		os.Remove(f.Name())
+	}()
+
+	data := `---
+address: ":9999"
+
+auth:
+  session:
+    key: secret
+
+  info:
+    service: 'github'
+    client_id: 'secret client id'
+    client_secret: 'secret client secret'
+    redirect_url: 'http://example.com/_gate_callback'
+
+paths:
+    login: "/_gate_login"
+    logout: "/_gate_logout"
+    callback: "/_gate_callback"
+    error: "/_gate_error"
+`
+	if err := ioutil.WriteFile(f.Name(), []byte(data), 0644); err != nil {
+		t.Error(err)
+	}
+
+	conf, err := ParseConf(f.Name())
+	if err != nil {
+		t.Error(err)
+	}
+
+	conf.SetOAuth2Paths()
+
+	if oauth2.PathLogin != "/_gate_login" {
+		t.Errorf("unexpected oauth2.PathLogin: %s", oauth2.PathLogin)
+	}
+	if oauth2.PathLogout != "/_gate_logout" {
+		t.Errorf("unexpected oauth2.PathLogout: %s", oauth2.PathLogout)
+	}
+	if oauth2.PathCallback != "/_gate_callback" {
+		t.Errorf("unexpected oauth2.PathCallback: %s", oauth2.PathCallback)
+	}
+	if oauth2.PathError != "/_gate_error" {
+		t.Errorf("unexpected oauth2.PathError: %s", oauth2.PathError)
 	}
 }
