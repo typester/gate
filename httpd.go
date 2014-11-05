@@ -137,7 +137,9 @@ func proxyHandleWrapper(u *url.URL, handler http.Handler) http.Handler {
 			}
 			go cp(d, nc)
 			go cp(nc, d)
-			<-errc
+			for i := 0; i < cap(errc); i++ {
+				<-errc
+			}
 		} else {
 			handler.ServeHTTP(w, r)
 		}
