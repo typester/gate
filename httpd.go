@@ -25,19 +25,39 @@ type User struct {
 	Email string
 }
 
+type Backend struct {
+	Host      string
+	URL       *url.URL
+	Strip     bool
+	StripPath string
+}
+
+const (
+	BackendHostHeader = "X-Gate-Backend-Host"
+)
+
 func NewServer(conf *Conf) *Server {
 	return &Server{conf}
 }
 
 func (s *Server) Run() error {
 	m := martini.Classic()
-	a := NewAuthenticator(s.Conf)
 
-	m.Use(sessions.Sessions("session", sessions.NewCookieStore([]byte(s.Conf.Auth.Session.Key))))
-	m.Use(a.Handler())
+	cookieStore := sessions.NewCookieStore([]byte(s.Conf.Auth.Session.Key))
+	if domain := s.Conf.Auth.Session.CookieDomain; domain != "" {
+		cookieStore.Options(sessions.Options{Domain: domain})
+	}
+	m.Use(sessions.Sessions("session", cookieStore))
 
-	m.Use(loginRequired())
-	m.Use(restrictRequest(s.Conf.Restrictions, a))
+	if s.Conf.Auth.Info.Service != noAuthServiceName {
+		a := NewAuthenticator(s.Conf)
+		m.Use(a.Handler())
+		m.Use(loginRequired())
+		m.Use(restrictRequest(s.Conf.Restrictions, a))
+	}
+
+	backendsFor := make(map[string][]Backend)
+	backendIndex := make([]string, len(s.Conf.Proxies))
 
 	for i := range s.Conf.Proxies {
 		p := s.Conf.Proxies[i]
@@ -55,15 +75,24 @@ func (s *Server) Run() error {
 		if err != nil {
 			return err
 		}
+		backendsFor[p.Path] = append(backendsFor[p.Path], Backend{
+			Host:      p.Host,
+			URL:       u,
+			Strip:     p.Strip,
+			StripPath: strip_path,
+		})
+		backendIndex[i] = p.Path
+		log.Printf("register proxy host:%s path:%s dest:%s strip_path:%v", p.Host, strip_path, u.String(), p.Strip)
+	}
 
-		proxy := httputil.NewSingleHostReverseProxy(u)
-		if p.Strip {
-			m.Any(p.Path, http.StripPrefix(strip_path, proxyHandleWrapper(u, proxy)))
-		} else {
-			m.Any(p.Path, proxyHandleWrapper(u, proxy))
+	registered := make(map[string]bool)
+	for _, path := range backendIndex {
+		if registered[path] {
+			continue
 		}
-
-		log.Printf("register proxy path:%s dest:%s", strip_path, u.String())
+		proxy := newVirtualHostReverseProxy(backendsFor[path])
+		m.Any(path, proxyHandleWrapper(proxy))
+		registered[path] = true
 	}
 
 	path, err := filepath.Abs(s.Conf.Htdocs)
@@ -84,6 +113,34 @@ func (s *Server) Run() error {
 	}
 }
 
+func newVirtualHostReverseProxy(backends []Backend) http.Handler {
+	bmap := make(map[string]Backend)
+	for _, b := range backends {
+		bmap[b.Host] = b
+	}
+	defaultBackend, ok := bmap[""]
+	if !ok {
+		defaultBackend = backends[0]
+	}
+
+	director := func(req *http.Request) {
+		b, ok := bmap[req.Host]
+		if !ok {
+			b = defaultBackend
+		}
+		req.URL.Scheme = b.URL.Scheme
+		req.URL.Host = b.URL.Host
+		if b.Strip {
+			if p := strings.TrimPrefix(req.URL.Path, b.StripPath); len(p) < len(req.URL.Path) {
+				req.URL.Path = "/" + p
+			}
+		}
+		req.Header.Set(BackendHostHeader, req.URL.Host)
+		log.Println("backend url", req.URL.String())
+	}
+	return &httputil.ReverseProxy{Director: director}
+}
+
 func isWebsocket(r *http.Request) bool {
 	if strings.ToLower(r.Header.Get("Connection")) == "upgrade" &&
 		strings.ToLower(r.Header.Get("Upgrade")) == "websocket" {
@@ -93,11 +150,16 @@ func isWebsocket(r *http.Request) bool {
 	}
 }
 
-func proxyHandleWrapper(u *url.URL, handler http.Handler) http.Handler {
+func proxyHandleWrapper(handler http.Handler) http.Handler {
+	proxy, _ := handler.(*httputil.ReverseProxy)
+	director := proxy.Director
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// websocket?
 		if isWebsocket(r) {
-			target := u.Host
+			director(r) // rewrite request headers for backend
+			target := r.Header.Get(BackendHostHeader)
+
 			if strings.HasPrefix(r.URL.Path, "/") == false {
 				r.URL.Path = "/" + r.URL.Path
 			}

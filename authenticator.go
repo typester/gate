@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-martini/martini"
 	gooauth2 "github.com/golang/oauth2"
 	"github.com/martini-contrib/oauth2"
@@ -9,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"fmt"
 )
 
 type Authenticator interface {
@@ -53,7 +53,7 @@ func GithubGeneral(opts *gooauth2.Options, conf *Conf) martini.Handler {
 
 type BaseAuth struct {
 	handler martini.Handler
-	conf *Conf
+	conf    *Conf
 }
 
 func (b *BaseAuth) Handler() martini.Handler {

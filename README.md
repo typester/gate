@@ -109,6 +109,29 @@ auth:
     api_endpoint: https://github.yourcompany.com/api
 ```
 
+## Name Based Virtual Host
+
+An example of "Name Based Viatual Host" setting.
+
+```yaml
+auth:
+  session:
+    # authentication key for cookie store
+    key: secret123
+    # domain of virtual hosts base host
+    cookie_domain: gate.example.com
+
+# proxy definitions
+proxy:
+  - path: /
+    host: elasticsearch.gate.example.com
+    dest: http://127.0.0.1:9200
+
+  - path: /
+    host: influxdb.gate.example.com
+    dest: http://127.0.0.1:8086
+```
+
 ## License
 
 MIT
